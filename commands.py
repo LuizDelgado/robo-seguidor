@@ -91,6 +91,7 @@ class robot():
     def reset(self): #Função que reinicia o controlador do robô
         str_commands = ["1;0;STOP","1;1;SLOTINIT",
                     "1;1;STATE","1;2;STATE",
+                    
                     "1;3;STATE","1;4;STATE",
                     "1;5;STATE","1;6;STATE",
                     "1;7;STATE","1;8;STATE"]
@@ -123,12 +124,20 @@ class robot():
         float_pos_x_cam = float(x_cam)
         float_pos_y_cam = float(y_cam)
         float_pos_z_cam = float(z_cam)
-        max_x_cam = self.camx_max - self.camx_min
-        max_y_cam = self.camy_max - self.camy_min
-        max_z_cam = self.camz_max - self.camz_min
+        quadrado_maior = [(self.x_max, self.y_min), (self.x_max, self.y_max), (self.x_min, self.y_max), (self.x_min, self.y_min)]
+        L1 = quadrado_maior[0][0] - quadrado_maior [3][0]
+        L2 = quadrado_maior[1][1] - quadrado_maior[0][1]
+        print(type(x_cam))
+        print(type(z_cam))
+        #x da camera é o y do robo
+        resultado_proporcaoy = (L2 * float(x_cam))
+        y_robot = self.y_min + resultado_proporcaoy
         
+        #z da camera é o x do robo
+        max_z_cam = self.camz_max - self.camz_min
         x_robot = (self.x_max*float_pos_z_cam)/self.camz_max#ok
-        y_robot = (self.y_max*float_pos_x_cam)/max_x_cam #ok
+
+
         z_robot = (self.z_max*self.camy_max)/float_pos_y_cam #ok
         a = self.a
         b = self.b
