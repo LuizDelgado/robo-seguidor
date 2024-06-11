@@ -1,8 +1,9 @@
 import socket
 import re
 import time
+import paho.mqtt.client as mqtt
 
-class robot():
+class Robot():
     socketRobo = None
     def __init__(self, x_max, x_min, y_max, y_min, z_max, z_min,  a, b, c, camx_max, camx_min, camy_max, camy_min, camz_max, camz_min):
         self.x_max = x_max
@@ -91,7 +92,6 @@ class robot():
     def reset(self): #Função que reinicia o controlador do robô
         str_commands = ["1;0;STOP","1;1;SLOTINIT",
                     "1;1;STATE","1;2;STATE",
-                    
                     "1;3;STATE","1;4;STATE",
                     "1;5;STATE","1;6;STATE",
                     "1;7;STATE","1;8;STATE"]
@@ -121,29 +121,24 @@ class robot():
             print(f"Received {data!r}")
 
     def moviment(self, x_cam, y_cam, z_cam): #função que determina o movimento do robô de acordo com a posição da mão
-        float_pos_x_cam = float(x_cam)
         float_pos_y_cam = float(y_cam)
         float_pos_z_cam = float(z_cam)
+        #                           p4                        p3                        p2                         p1
         quadrado_maior = [(self.x_max, self.y_min), (self.x_max, self.y_max), (self.x_min, self.y_max), (self.x_min, self.y_min)]
         L1 = quadrado_maior[0][0] - quadrado_maior [3][0]
         L2 = quadrado_maior[1][1] - quadrado_maior[0][1]
-        print(type(x_cam))
-        print(type(z_cam))
         #x da camera é o y do robo
         resultado_proporcaoy = (L2 * float(x_cam))
-        y_robot = self.y_min + resultado_proporcaoy
-        
-        #z da camera é o x do robo
-        max_z_cam = self.camz_max - self.camz_min
+
+        # y_robot = self.y_min + resultado_proporcaoy
+        y_robot = self.y_max - resultado_proporcaoy
         x_robot = (self.x_max*float_pos_z_cam)/self.camz_max#ok
-
-
         z_robot = (self.z_max*self.camy_max)/float_pos_y_cam #ok
         a = self.a
         b = self.b
         c = self.c
 
-        # print("POSIÇÃO DOS CORNOS=({:.3f}, {}, {:.3f}, {}, {}, {}".format(x_robot, y_robot, z_robot, a, b, c))
+        # print("POSIÇÃO DOS CORNOS=({ f}, {}, {:.3f}, {}, {}, {}".format(x_robot, y_robot, z_robot, a, b, c))
 
         if self.x_min > x_robot:
             x_robot = self.x_min
@@ -189,3 +184,42 @@ class robot():
             coordenates = content_inside_brackets.split(",")
             print(f"Received {data_str!r}")
             time.sleep(5)
+
+class MQTTClient:
+    # Construtor da classe, inicializa uma instância da classe com as configurações necessárias.
+    def __init__(self, broker, port, username, password, client_id):
+        self.broker = broker  # Endereço do broker MQTT.
+        self.port = port  # Porta para a conexão com o broker.
+        self.username = username  # Nome de usuário para autenticação no broker.
+        self.password = password  # Senha para autenticação no broker.
+        self.client_id = client_id  # ID do cliente para identificação no broker.
+        self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, client_id=self.client_id)  # Cria o objeto cliente MQTT com a versão de callback especificada.
+        self.configure_client()  # Chama o método para configurar o cliente MQTT.
+
+    # Método para configurar o cliente MQTT, definindo credenciais e handlers (funções de callback).
+    def configure_client(self):
+        self.client.username_pw_set(self.username, self.password)  # Configura o nome de usuário e senha no cliente MQTT.
+        self.client.on_connect = self.on_connect  # Define o handler para o evento de conexão.
+        self.client.on_disconnect = self.on_disconnect  # Define o handler para o evento de desconexão.
+
+    # Função chamada quando o cliente se conecta ao broker.
+    def on_connect(self, client, userdata, flags, rc):
+        if rc == 0:
+            print("Conectado ao broker MQTT.")  # Sucesso na conexão.
+        else:
+            print(f"Falha na conexão com o servidor, código de retorno: {rc}")  # Falha na conexão.
+
+    # Função chamada quando o cliente se desconecta do broker.
+    def on_disconnect(self, client, userdata, rc):
+        print("Desconectado do broker MQTT.")  # Informa sobre a desconexão.
+
+    # Método para publicar uma mensagem em um tópico específico.
+    def publish(self, topic, message):
+        try:
+            self.client.connect(self.broker, self.port)  # Conecta ao broker MQTT.
+            self.client.loop_start()  # Inicia o loop em segundo plano para processar callbacks de rede.
+            self.client.publish(topic, message)  # Publica a mensagem no tópico especificado.
+            print("Mensagem enviada")
+        finally:
+            self.client.loop_stop()  # Para o loop de rede.
+            self.client.disconnect()  # Desconecta do broker MQTT.
