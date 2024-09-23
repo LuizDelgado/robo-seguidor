@@ -6,7 +6,6 @@ import mediapipe as mp
 import cv2
 import time
 
-
 #Carregando as varivaveis de ambiente
 load_dotenv()
 
@@ -25,14 +24,21 @@ mpDraw = mp.solutions.drawing_utils
 #iniciando comunicação com o robô
 host_init = os.getenv("HOST")
 port_init = os.getenv("PORT")
-host = str(host_init) #Ip do robô tem que ser str 
-port = int(port_init) #Port de comunicação tem que ser um número inteiro
+BROKER = str(os.getenv("BROKER"))
+PORT = int(os.getenv("PORT"))
+USERNAME = str(os.getenv("HOST_NAME"))
+PASSWORD = str(os.getenv("PASSWORD"))
+CLIENT_ID = str(os.getenv("CLIENT_ID"))
+TOPIC = str(os.getenv("TOPIC"))
+
+host_robot = str(host_init) #Ip do robô tem que ser str 
+port_robot = int(port_init) #Port de comunicação tem que ser um número inteiro
 robo = Robot(365, 225,165,-76.5,445,225,-180,0,180,0.80,0.20,0.25,0.75,-0.12,-0.5)
-robo.connect_to_robot(host, port)
-leds = MQTTClient("192.168.2.102", 7500, "planta40mqttlogin","gatoehfofoplanta40eniac","Robô - Planta 4.0")
+robo.connect_to_robot(host_robot, port_robot)
+leds = MQTTClient(BROKER, PORT, USERNAME,PASSWORD, CLIENT_ID)
 robo.start_control()
 robo.set_speed(100)
-leds.publish("Centraldecomandos40", "led_verde")
+leds.publish(TOPIC, "led_verde")
 led_verde_ligado = False
 led_vermelho_ligado = False
 
@@ -64,7 +70,7 @@ while True:
 
             if contador >=4:
                 if not led_verde_ligado:
-                    leds.publish("Centraldecomandos40", "led_vermelho")
+                    leds.publish(TOPIC, "led_vermelho")
                     led_verde_ligado = True
                     led_vermelho_ligado = False
                 if control_servo_on_flag:
@@ -91,9 +97,8 @@ while True:
                     time.sleep(0.05)
 
             elif contador < 4:
-                print(contador)
                 if not led_vermelho_ligado:
-                    leds.publish("Centraldecomandos40", "led_verde")
+                    leds.publish(TOPIC, "led_verde")
                     led_vermelho_ligado = True
                     led_verde_ligado = False
 

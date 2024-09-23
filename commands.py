@@ -54,14 +54,6 @@ class Robot():
         data = self.socketRobo.recv(1024)
         print(f"Received {data!r}")
 
-    def servo_off(self): #Desliga os servos e para o robô
-        self.socketRobo.sendall(b"1;1;SRVOFF") #Desabilita os servos
-        data = self.socketRobo.recv(1024)
-        print(f"Received {data!r}")
-        self.socketRobo.sendall(b"1; 0;STOP") #Para o robô
-        data = self.socketRobo.recv(1024)
-        print(f"Received {data!r}")
-
     def resetmap(self): #Essa função realiza o reset do robo no mapa dele 
         p1 = [196.360, -15.000, 370.000, 180.000, 0.000, 180.000]
         p2 = [104.000, -113.000, 451.000, 180.000, 0.000, 180.000]
@@ -138,7 +130,6 @@ class Robot():
         b = self.b
         c = self.c
 
-        # print("POSIÇÃO DOS CORNOS=({ f}, {}, {:.3f}, {}, {}, {}".format(x_robot, y_robot, z_robot, a, b, c))
 
         if self.x_min > x_robot:
             x_robot = self.x_min
